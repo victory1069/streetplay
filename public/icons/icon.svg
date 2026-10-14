@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Placeholder mark: replace when the brand lands. -->
+  <rect width="512" height="512" rx="112" fill="#0b0b0f"/>
+  <circle cx="256" cy="256" r="150" fill="none" stroke="#00c46a" stroke-width="28"/>
+  <path d="M220 186 L336 256 L220 326 Z" fill="#ffc83d"/>
+</svg>

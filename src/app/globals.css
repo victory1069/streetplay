@@ -1,26 +1,441 @@
 @import "tailwindcss";
 
+/*
+ * StreetPlay design tokens (from the screen designs).
+ * Three page themes: paper (cream, setup screens), ink (dark, on-camera
+ * game screens), yellow (moments: landing, wins, viewer game).
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #131211;
+  --paper: #f2ede2;
+  --card: #fdfaf2;
+  --sand: #e1d8c4;
+  --yellow: #fdc52d;
+  --yellow-deep: #e9b322;
+  --green: #1e9e5a;
+  --green-text: #157a45;
+  --red: #e5352b;
+  --blue: #2d5bc6;
+  --muted: #6d685f;
+  --coal: #1d1b18;
+  --smoke: #3a3732;
+  --ash: #b3ad9f;
+
+  /* The page colour behind tickets, so their side notches look punched out. */
+  --page: var(--paper);
+  --background: var(--paper);
+  --foreground: var(--ink);
 }
 
 @theme inline {
+  --color-ink: var(--ink);
+  --color-paper: var(--paper);
+  --color-card: var(--card);
+  --color-sand: var(--sand);
+  --color-yellow: var(--yellow);
+  --color-yellow-deep: var(--yellow-deep);
+  --color-green: var(--green);
+  --color-green-text: var(--green-text);
+  --color-red: var(--red);
+  --color-blue: var(--blue);
+  --color-muted: var(--muted);
+  --color-coal: var(--coal);
+  --color-smoke: var(--smoke);
+  --color-ash: var(--ash);
+  --color-page: var(--page);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-shout: var(--font-bowlby), var(--font-archivo), sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  overscroll-behavior-y: none;
+}
+
+/* Page themes. Put one on the outermost element of a screen. */
+.theme-paper {
+  --page: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+}
+.theme-ink {
+  --page: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  color-scheme: dark;
+}
+.theme-yellow {
+  --page: var(--yellow);
+  background: var(--yellow);
+  color: var(--ink);
+}
+
+/* Type styles. Archivo's width axis does both the condensed headlines and the wide titles. */
+@utility font-display {
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-weight: 850;
+  font-variation-settings: "wdth" 62;
+  text-transform: uppercase;
+  line-height: 0.88;
+  letter-spacing: -0.01em;
+}
+@utility font-wide {
+  font-family: var(--font-archivo), system-ui, sans-serif;
+  font-weight: 800;
+  font-variation-settings: "wdth" 125;
+  letter-spacing: -0.02em;
+}
+@utility font-label {
+  font-family: var(--font-plex-mono), ui-monospace, monospace;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+@utility font-shout {
+  font-family: var(--font-bowlby), var(--font-archivo), sans-serif;
+  text-transform: uppercase;
+  line-height: 0.95;
+  text-shadow: 0.06em 0.06em 0 var(--red);
+}
+@utility tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Hide scrollbars on horizontal chip rows. */
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes sp-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+.sp-pulse {
+  animation: sp-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===================================================================
+ * First-launch intro (components/intro/intro-splash.tsx)
+ * Hidden unless <html data-intro> is set before paint.
+ * Timeline: ticket punch 0-.5s, letters drop .25-1s, "admit one" types
+ * .9-1.4s, coins burst 1s, tagline slams 1.35-2s, tear 2.15-2.45s,
+ * halves fly 2.45s, curtain lifts 2.75-3.3s.
+ * =================================================================== */
+.sp-intro {
+  display: none;
+}
+html[data-intro] {
+  overflow: hidden;
+}
+html[data-intro] .sp-intro {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+}
+.sp-intro.is-leaving {
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+.sp-intro.is-on {
+  animation: sp-curtain 0.55s cubic-bezier(0.7, 0, 0.2, 1) 2.75s forwards;
+}
+.sp-intro-wheel {
+  position: absolute;
+  width: 150vmax;
+  height: 150vmax;
+  opacity: 0;
+}
+.is-on .sp-intro-wheel {
+  animation: sp-wheel 3s cubic-bezier(0.1, 0.6, 0.2, 1) forwards;
+}
+.sp-intro-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: clamp(28px, 6vh, 56px);
+  padding: 0 20px;
+}
+.sp-intro-ticket {
+  position: relative;
+  display: grid;
+  opacity: 0;
+}
+.is-on .sp-intro-ticket {
+  animation: sp-punch 0.55s cubic-bezier(0.2, 1.5, 0.4, 1) forwards;
+}
+.sp-intro-half {
+  grid-area: 1 / 1;
+}
+.sp-intro-top {
+  clip-path: inset(0 0 50% 0);
+}
+.sp-intro-bottom {
+  clip-path: inset(50% 0 0 0);
+}
+.is-on .sp-intro-top {
+  animation: sp-tear-up 0.6s cubic-bezier(0.6, 0, 0.8, 0.4) 2.45s forwards;
+}
+.is-on .sp-intro-bottom {
+  animation: sp-tear-down 0.6s cubic-bezier(0.6, 0, 0.8, 0.4) 2.45s forwards;
+}
+.sp-intro-ticket-body {
+  position: relative;
+  display: grid;
+  justify-items: start;
+  gap: 4px;
+  padding: 18px clamp(24px, 7vw, 44px) 20px;
+  border-radius: 20px;
+  background: var(--yellow);
+  color: var(--ink);
+}
+.sp-intro-notch {
+  position: absolute;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin-top: -15px;
+  border-radius: 999px;
+  background: var(--ink);
+}
+.sp-intro-notch-l {
+  left: -15px;
+}
+.sp-intro-notch-r {
+  right: -15px;
+}
+.sp-intro-tear {
+  position: absolute;
+  top: 50%;
+  left: 22px;
+  right: 22px;
+  border-top: 2px dashed var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+.is-on .sp-intro-tear {
+  animation: sp-tear-line 0.3s ease-out 2.15s forwards;
+}
+.sp-intro-admit {
+  font-family: var(--font-plex-mono), monospace;
+  font-size: clamp(10px, 2.9vw, 13px);
+  letter-spacing: 0.28em;
+  white-space: nowrap;
+  clip-path: inset(0 100% 0 0);
+}
+.is-on .sp-intro-admit {
+  animation: sp-type 0.5s steps(18, end) 0.9s forwards;
+}
+.sp-intro-word {
+  display: flex;
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 800;
+  font-variation-settings: "wdth" 125;
+  font-size: clamp(26px, 8.2vw, 56px);
+  line-height: 0.95;
+  letter-spacing: -0.02em;
+}
+.sp-intro-letter {
+  display: inline-block;
+  opacity: 0;
+}
+.is-on .sp-intro-letter {
+  animation: sp-drop 0.5s cubic-bezier(0.2, 1.6, 0.4, 1) calc(0.25s + var(--i) * 55ms) forwards;
+}
+.sp-intro-coins {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 0;
+  height: 0;
+  margin-top: clamp(50px, 9vw, 70px);
+}
+.sp-intro-coin {
+  position: absolute;
+  left: -20px;
+  top: -20px;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 3px solid var(--ink);
+  background: var(--yellow);
+  color: var(--ink);
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 900;
+  font-variation-settings: "wdth" 62;
+  font-size: 22px;
+  box-shadow: 0 0 0 2px var(--yellow);
+  opacity: 0;
+}
+.is-on .sp-intro-coin {
+  animation: sp-coin 1s cubic-bezier(0.15, 0.8, 0.3, 1) calc(1s + var(--t)) forwards;
+}
+.sp-intro-tagline {
+  display: grid;
+  justify-items: center;
+  font-family: var(--font-archivo), sans-serif;
+  font-weight: 850;
+  font-variation-settings: "wdth" 62;
+  text-transform: uppercase;
+  font-size: clamp(44px, 13vw, 84px);
+  line-height: 0.88;
+  text-align: center;
+}
+.is-on .sp-intro-tagline {
+  animation: sp-fade-out 0.3s ease 2.45s forwards;
+}
+.sp-intro-line {
+  display: flex;
+  gap: 0.22em;
+}
+.sp-intro-line-2 {
+  color: var(--yellow);
+}
+.sp-intro-slam {
+  display: inline-block;
+  opacity: 0;
+}
+.is-on .sp-intro-slam {
+  animation: sp-slam 0.32s cubic-bezier(0.3, 1.4, 0.5, 1) calc(1.35s + var(--w) * 105ms) forwards;
+}
+.sp-intro-skip {
+  position: absolute;
+  bottom: calc(env(safe-area-inset-bottom) + 22px);
+  font-family: var(--font-plex-mono), monospace;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  opacity: 0.45;
+}
+@keyframes sp-wheel {
+  0% {
+    opacity: 0;
+    transform: scale(0.35) rotate(0deg);
+  }
+  20% {
+    opacity: 0.14;
+  }
+  100% {
+    opacity: 0.1;
+    transform: scale(1) rotate(780deg);
+  }
+}
+@keyframes sp-punch {
+  0% {
+    opacity: 0;
+    transform: scale(0.25) rotate(-16deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(-3deg);
+  }
+}
+@keyframes sp-drop {
+  0% {
+    opacity: 0;
+    transform: translateY(-140%) rotate(-24deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotate(0deg);
+  }
+}
+@keyframes sp-type {
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes sp-coin {
+  0% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(0) scale(0.2);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--a)) translateY(calc(-1 * var(--d))) rotate(calc(-1 * var(--a))) scale(1);
+  }
+}
+@keyframes sp-slam {
+  0% {
+    opacity: 0;
+    transform: scale(2.4) translateY(10%);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+@keyframes sp-tear-line {
+  to {
+    transform: scaleX(1);
+  }
+}
+@keyframes sp-tear-up {
+  to {
+    transform: translateY(-75vh) rotate(-9deg);
+  }
+}
+@keyframes sp-tear-down {
+  to {
+    transform: translateY(75vh) rotate(7deg);
+  }
+}
+@keyframes sp-fade-out {
+  to {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+}
+@keyframes sp-curtain {
+  to {
+    clip-path: inset(0 0 100% 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .is-on .sp-intro-ticket,
+  .is-on .sp-intro-letter,
+  .is-on .sp-intro-slam,
+  .is-on .sp-intro-admit {
+    animation: none;
+    opacity: 1;
+    clip-path: none;
+  }
+  .sp-intro-wheel,
+  .sp-intro-coins,
+  .sp-intro-tear {
+    display: none;
+  }
 }
